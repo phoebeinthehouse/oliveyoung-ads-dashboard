@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ulta Ads Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--lina:#378ADD;--phoebe:#D4537E;--sarah:#1D9E75;--iris:#9B59B6;--bg:#F7F6F2;--surface:#FFF;--surface2:#F1EFE8;--border:rgba(0,0,0,0.08);--text:#1a1a18;--muted:#888780;--radius:12px;--radius-sm:8px;}
+@media(prefers-color-scheme:dark){:root{--bg:#18181A;--surface:#232325;--surface2:#2C2C2E;--border:rgba(255,255,255,0.08);--text:#F1EFE8;}}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.nav{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:.5px solid var(--border);padding:0 1.5rem;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;flex-wrap:wrap;}
+.nav-logo{font-size:14px;font-weight:600;padding:14px 0;margin-right:1.5rem;white-space:nowrap;}
+.nav-logo span{color:var(--muted);font-weight:400;}
+.nav-tab{padding:14px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border:none;background:transparent;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--text);}
+
+/* DATE FILTER BAR */
+.date-bar{background:var(--surface);border-bottom:.5px solid var(--border);padding:8px 1.5rem;}
+.date-bar-inner{max-width:1200px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.date-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:2px;white-space:nowrap;}
+.mpill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:.5px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;transition:all .15s;}
+.mpill.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+.date-sep{width:1px;height:18px;background:var(--border);margin:0 4px;}
+.custom-range{display:flex;align-items:center;gap:6px;}
+.date-input{padding:4px 10px;border-radius:var(--radius-sm);border:.5px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-family:inherit;outline:none;}
+.date-input:focus{border-color:var(--text);}
+.apply-btn{padding:4px 14px;border-radius:var(--radius-sm);background:var(--text);color:var(--bg);font-size:12px;font-weight:600;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.date-mode-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius-sm);padding:2px;}
+.dmt{padding:3px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;transition:all .15s;text-transform:uppercase;letter-spacing:.04em;}
+.dmt.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+.pg{max-width:1200px;margin:0 auto;padding:1.75rem 1.5rem;display:none;}
+.pg.active{display:block;}
+.top-bar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem;flex-wrap:wrap;gap:12px;}
+.top-bar h1{font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.top-meta{font-size:12px;color:var(--muted);margin-top:4px;}
+.mtabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;}
+.tab{padding:5px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;font-weight:500;transition:all .15s;}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.slabel{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.pgrid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:1.75rem;}
+@media(max-width:640px){.pgrid3{grid-template-columns:1fr;}}
+.pcard{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;}
+.ph{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+.pname{font-size:15px;font-weight:600;}.prank{font-size:11px;color:var(--muted);margin-top:1px;}
+.srow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px;}
+.st{background:var(--surface2);border-radius:var(--radius-sm);padding:8px 10px;}
+.stl{font-size:10px;color:var(--muted);margin-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;}
+.stv{font-size:15px;font-weight:600;}.stv.good{color:#0F6E56;}.stv.sm{font-size:12px;}
+.mlabels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;margin-top:4px;}
+.btrack{background:var(--surface2);border-radius:4px;height:7px;overflow:hidden;}
+.bfill{height:100%;border-radius:4px;}
+.ccard{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem;}
+.ctop{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
+.ctitle{font-size:14px;font-weight:600;}
+.leg{display:flex;gap:14px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:6px 8px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:.5px solid var(--border);white-space:nowrap;}
+td{padding:8px 8px;border-bottom:.5px solid var(--border);color:var(--text);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surface2);}
+.bdg{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;}
+.bvdo{background:#E6F1FB;color:#0C447C;}.bimg{background:#FAEEDA;color:#633806;}
+.pp{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:500;}
+.psgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1.5rem;}
+@media(max-width:700px){.psgrid{grid-template-columns:repeat(2,1fr);}}
+.pscard{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:.7rem .8rem;}
+.psname{font-size:14px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;}
+.pml{font-size:9px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-top:3px;}
+.pmv{font-size:12px;font-weight:600;}
+.pdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:1.25rem;}
+.pdcard{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;}
+.pdname{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.ptag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--muted);letter-spacing:.04em;}
+.crow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border);}
+.crow:last-child{border-bottom:none;padding-bottom:0;}
+.clabel{display:flex;align-items:center;gap:7px;min-width:72px;}
+.cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}.cname{font-size:13px;font-weight:500;}
+.cbw{flex:1;}.cbt{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;}
+.cbf{height:100%;border-radius:4px;transition:width .5s ease;}
+.cval{min-width:90px;text-align:right;font-size:13px;font-weight:600;}
+.pmtabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;flex-wrap:wrap;}
+.pmtab{padding:4px 11px;border-radius:5px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;font-weight:500;transition:all .15s;}
+.pmtab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.note{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.notice{background:#FAEEDA;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:#633806;margin-bottom:1.25rem;}
+
+/* AD DETAIL / PRODUCT CREATIVE PAGE */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center;}
+.filter-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+.fb{padding:4px 13px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;border:.5px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-weight:500;transition:all .15s;}
+.fb.active{background:var(--surface2);color:var(--text);border-color:rgba(0,0,0,.15);}
+.sort-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:var(--radius-sm);padding:3px;margin-left:auto;}
+.sort-btn{padding:4px 11px;border-radius:5px;font-size:12px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;font-weight:500;transition:all .15s;}
+.sort-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+/* Product filter pills */
+.prod-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.prod-pill{padding:6px 18px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:.5px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;transition:all .15s;}
+
+.ad-thumb{width:96px;height:96px;object-fit:cover;border-radius:6px;background:var(--surface2);display:block;}
+.ad-thumb-cell{width:106px;padding:6px 4px 6px 10px!important;}
+.pagination{display:flex;gap:4px;justify-content:center;padding:16px 0;align-items:center;}
+.pg-btn{padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;border:.5px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-weight:500;transition:all .15s;}
+.pg-btn:hover{background:var(--surface2);}
+.pg-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+.pg-btn:disabled{opacity:.3;cursor:default;}
+.pg-info{font-size:12px;color:var(--muted);margin:0 8px;}
+.ad-table-wrap{overflow-x:auto;}
+.ad-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.ad-tbl th{text-align:left;padding:6px 10px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:.5px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+.ad-tbl th:hover{color:var(--text);}
+.ad-tbl th.sorted{color:var(--text);}
+.ad-tbl th .sort-arrow{margin-left:4px;opacity:.5;}
+.ad-tbl th.sorted .sort-arrow{opacity:1;}
+.ad-tbl td{padding:10px 10px;border-bottom:.5px solid var(--border);vertical-align:middle;}
+.ad-tbl tr:last-child td{border-bottom:none;}
+.ad-tbl tr:hover td{background:var(--surface2);}
+.no-data{text-align:center;padding:3rem;color:var(--muted);font-size:14px;}
+.rank-num{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">Ulta Ads <span>Dashboard</span></div>
+    <button class="nav-tab active" onclick="goPage('creator',this)">By Creator</button>
+    <button class="nav-tab" onclick="goPage('product',this)">By Product</button>
+    <button class="nav-tab" onclick="goPage('creative',this)">By Creative</button>
+    <button class="nav-tab" onclick="goPage('weekly',this)">Weekly Trend</button>
+    <button class="nav-tab" onclick="goPage('weeklycreative',this)">Weekly Trend by Creative</button>
+    <button class="nav-tab" style="margin-left:auto;font-size:12px;color:var(--muted)" onclick="clearCache();location.reload();" title="데이터 새로고침">↻ Refresh</button>
+  </div>
+</nav>
+
+<!-- DATE FILTER BAR -->
+<div class="date-bar">
+  <div class="date-bar-inner">
+    <div class="date-mode-tabs">
+      <button class="dmt active" id="dmt-monthly" onclick="setDateMode('monthly',this)">Monthly</button>
+      <button class="dmt" id="dmt-custom" onclick="setDateMode('custom',this)">Custom</button>
+    </div>
+    <div class="date-sep"></div>
+    <!-- Monthly pills -->
+    <div id="monthly-pills" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <button class="mpill" onclick="switchMonth('2025-11',this)">Nov 2025</button>
+      <button class="mpill" onclick="switchMonth('2025-12',this)">Dec 2025</button>
+      <button class="mpill" onclick="switchMonth('2026-01',this)">Jan 2026</button>
+      <button class="mpill" onclick="switchMonth('2026-02',this)">Feb 2026</button>
+      <button class="mpill active" onclick="switchMonth('2026-03',this)">Mar 2026</button>
+    </div>
+    <!-- Custom range -->
+    <div id="custom-range" style="display:none;" class="custom-range">
+      <span class="date-label">From</span>
+      <input type="date" class="date-input" id="dateFrom" value="2025-11-14">
+      <span class="date-label">To</span>
+      <input type="date" class="date-input" id="dateTo" value="2026-03-23">
+      <button class="apply-btn" onclick="applyCustomRange()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 1: BY CREATOR -->
+
+<!-- Loading / Error -->
+<div id="loadingBar" style="display:flex;align-items:center;justify-content:center;padding:2rem;gap:12px;color:var(--muted);font-size:14px;">
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="animation:spin 1s linear infinite">
+    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" stroke-dasharray="25 13" opacity=".6"/>
+  </svg>
+  Google Sheets에서 데이터 불러오는 중...
+</div>
+<div id="loadError" style="display:none;max-width:1200px;margin:1rem auto;padding:12px 1.5rem;background:#FAEEDA;border-radius:8px;font-size:13px;color:#633806;"></div>
+<style>@keyframes spin{{to{{transform:rotate(360deg)}}}}</style>
+
+<div class="pg active" id="pg-creator">
+  <div class="top-bar">
+    <div><h1>Creator performance</h1><div class="top-meta" id="creatorMeta"></div></div>
+    <div class="mtabs" id="mtabs">
+      <button class="tab active" onclick="switchM('clicks',this)">Clicks</button>
+      <button class="tab" onclick="switchM('ctr',this)">CTR</button>
+      <button class="tab" onclick="switchM('cpc',this)">CPC</button>
+      <button class="tab" onclick="switchM('purchases',this)">ShopNowClick</button>
+    </div>
+  </div>
+  <div id="novNotice" style="display:none" class="notice"></div>
+  <div class="slabel">Overview</div>
+  <div class="pgrid3" id="pcards"></div>
+  <div class="ccard">
+    <div class="ctop">
+      <div class="ctitle" id="trendT">Daily clicks by creator</div>
+      <div class="leg">
+        <div class="li"><span class="ld" style="background:#378ADD"></span>Lina</div>
+        <div class="li"><span class="ld" style="background:#D4537E"></span>Phoebe</div>
+        <div class="li"><span class="ld" style="background:#1D9E75"></span>Sarah</div>
+        <div class="li"><span class="ld" style="background:#9B59B6"></span>Iris</div>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:220px;"><canvas id="trendC"></canvas></div>
+  </div>
+  <div class="ccard">
+    <div class="ctop">
+      <div class="ctitle" id="mediaT">Video vs image by creator</div>
+      <div class="leg">
+        <div class="li"><span class="ld" style="background:#888780"></span>Video</div>
+        <div class="li"><span class="ld" style="background:#888780;opacity:.4"></span>Image</div>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="mediaC"></canvas></div>
+  </div>
+</div>
+
+<!-- PAGE 2: BY PRODUCT -->
+<div class="pg" id="pg-product">
+  <div class="top-bar">
+    <div><h1>Product performance</h1><div class="top-meta" id="productMeta"></div></div>
+    <div class="pmtabs" id="pmtabs">
+      <button class="pmtab active" onclick="switchPM('clicks',this)">Clicks</button>
+      <button class="pmtab" onclick="switchPM('ctr',this)">CTR</button>
+      <button class="pmtab" onclick="switchPM('cpc',this)">CPC</button>
+      <button class="pmtab" onclick="switchPM('spend',this)">Spend</button>
+      <button class="pmtab" onclick="switchPM('purchases',this)">ShopNowClick</button>
+    </div>
+  </div>
+  <div class="slabel">Product summary</div>
+  <div class="psgrid" id="psgrid"></div>
+  <div class="slabel">Creator breakdown per product</div>
+  <div class="pdgrid" id="pdgrid"></div>
+</div>
+
+<!-- PAGE 3: BY CREATIVE -->
+<div class="pg" id="pg-creative">
+  <div class="top-bar">
+    <div><h1>Creative performance</h1><div class="top-meta" id="creativeMeta"></div></div>
+  </div>
+  <!-- Product filter pills -->
+  <div class="slabel">Filter by product</div>
+  <div class="prod-pills" id="prodPills"></div>
+  <!-- Sub-filters + sort -->
+  <div style="margin-bottom:10px">
+    <input id="adSearchInput" type="text" placeholder="소재명 검색..." oninput="adNameSearch=this.value.toLowerCase();adPage=0;renderCreativeTable()" style="width:240px;padding:7px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-size:13px;font-family:inherit;color:var(--text);outline:none;">
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Creator</span>
+    <button class="fb active" onclick="setCF('person','All',this)">All</button>
+    <button class="fb" onclick="setCF('person','Lina',this)">Lina</button>
+    <button class="fb" onclick="setCF('person','Phoebe',this)">Phoebe</button>
+    <button class="fb" onclick="setCF('person','Sarah',this)">Sarah</button>
+    <button class="fb" onclick="setCF('person','Iris',this)">Iris</button>
+    <button class="fb" onclick="setCF('person','Partner',this)">Partnership</button>
+    <span class="filter-label" style="margin-left:8px">Media</span>
+    <button class="fb active" onclick="setCF('media','All',this)">All</button>
+    <button class="fb" onclick="setCF('media','vdo',this)">Video</button>
+    <button class="fb" onclick="setCF('media','img',this)">Image</button>
+    <button id="splitCampaignBtn" class="fb" onclick="toggleSplitCampaign()" style="margin-left:8px">캠페인 분리</button>
+    <div class="sort-tabs">
+      <button class="sort-btn" onclick="setCS('clicks',this)">Clicks</button>
+      <button class="sort-btn" onclick="setCS('ctr',this)">CTR</button>
+      <button class="sort-btn active" onclick="setCS('purchases',this)">ShopNowClick</button>
+    </div>
+  </div>
+  <!-- Creative table -->
+  <div class="ccard" style="padding:0;overflow:hidden;">
+    <div class="ad-table-wrap">
+      <table class="ad-tbl" id="creativeTable">
+        <thead><tr id="creativeThead">
+          <th style="width:36px;padding-left:14px">#</th>
+          <th onclick="setCS('ad_name',null)">Ad name <span class="sort-arrow">↕</span></th>
+          <th class="ad-thumb-cell"></th>
+          <th>Creator</th>
+          <th>Media</th>
+          <th onclick="setCS('clicks',null)">Clicks <span class="sort-arrow">↕</span></th>
+          <th onclick="setCS('spend',null)">Spend <span class="sort-arrow">↕</span></th>
+          <th onclick="setCS('ctr',null)">CTR <span class="sort-arrow">↕</span></th>
+          <th onclick="setCS('cpc',null)">CPC <span class="sort-arrow">↕</span></th>
+          <th onclick="setCS('purchases',null)" class="sorted">ShopNowClick <span class="sort-arrow">↓</span></th>
+        </tr></thead>
+        <tbody id="creativeTbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="adPagination"></div>
+  </div>
+</div>
+
+<!-- PAGE 4: WEEKLY TREND -->
+<div class="pg" id="pg-weekly">
+  <div class="top-bar">
+    <div><h1>Weekly trend by product</h1><div class="top-meta" id="weeklyMeta"></div></div>
+    <div class="pmtabs" id="wpmtabs">
+      <button class="pmtab active" onclick="switchWM('purchases',this)">ShopNowClick</button>
+    </div>
+  </div>
+  <div class="note" id="weeklyNote">선택한 기간의 일별 추이 · 중복 선택 가능</div>
+  <div class="filter-bar" id="weekPills" style="margin-bottom:1.25rem"></div>
+  <div id="weeklyCharts"></div>
+</div>
+
+<!-- PAGE 5: WEEKLY TREND BY CREATIVE -->
+<div class="pg" id="pg-weeklycreative">
+  <div class="top-bar">
+    <div><h1>Weekly Trend by Creative</h1><div class="top-meta" id="weeklyCreativeMeta"></div></div>
+    <div class="pmtabs" id="wcpmtabs">
+      <button class="pmtab active" onclick="switchWCM('purchases',this)">ShopNowClick</button>
+    </div>
+  </div>
+  <div class="note">선택한 기간의 일별 추이 · 중복 선택 가능 · 광고비 ₩30,000 이상 소재만 표시</div>
+  <div class="filter-bar" id="weekPillsWC" style="margin-bottom:1.25rem"></div>
+  <div class="prod-pills" id="wcProdPills"></div>
+  <div class="filter-bar" id="wcCreatorFilter" style="margin-bottom:1.25rem">
+    <span class="filter-label">Creator</span>
+    <button class="fb active" onclick="setWCFilter('person','All',this)">All</button>
+    <button class="fb" onclick="setWCFilter('person','Lina',this)">Lina</button>
+    <button class="fb" onclick="setWCFilter('person','Phoebe',this)">Phoebe</button>
+    <button class="fb" onclick="setWCFilter('person','Sarah',this)">Sarah</button>
+    <button class="fb" onclick="setWCFilter('person','Iris',this)">Iris</button>
+    <button class="fb" onclick="setWCFilter('person','Partner',this)">Partnership</button>
+  </div>
+  <div id="weeklyCreativeCharts"></div>
+</div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbzAu2VrJkDePDDlMi4kvmOdnV08gQa_hWdE3A8bxrsa__-IqRHtOilSuRzPr8bt1rF5/exec';
+const META_URL=API_URL+'?sheet='+encodeURIComponent('meta-ulta');
+let AD_IMAGES=[];
+function driveUrl(u){const m=u.match(/\/d\/([^/]+)/);return m?'https://lh3.googleusercontent.com/d/'+m[1]+'=s400':u;}
+function getAdImg(adName,product,person,from,to,media){
+  if(!adName)return'';
+  const lc=adName.toLowerCase();
+  const personLc=(person&&person!=='Partner')?person.toLowerCase():null;
+  const PC={'BCA/BPD':['BCA','BPD','PCF']};
+  // New products use their sheet code automatically; only grouped products
+  // need an explicit alias list.
+  const codes=product?(PC[product]||[product]):[];
+  const mt=x=>{
+    const fn=x.n.toLowerCase(),tokens=fn.split('_');
+    if(person==='Partner')return tokens.includes(lc)||tokens.includes(lc+'-p')||(lc.includes('_')&&fn.includes(lc));
+    return lc.includes('_')?fn.includes(lc):tokens.includes(lc);
+  };
+  const mp=x=>!personLc||x.n.toLowerCase().includes(personLc);
+  const mm=x=>!media||x.n.split('_').includes(media);
+  const inDateRange=x=>x.d&&from&&x.d>=from&&x.d<=to;
+  const latest=(arr)=>arr.reduce((a,b)=>b.d>a.d?b:a);
+  const best=(arr)=>{
+    const ranged=arr.filter(x=>inDateRange(x));
+    return ranged.length?latest(ranged):arr[0];
+  };
+  if(codes.length){
+    const matches=AD_IMAGES.filter(x=>mt(x)&&codes.some(c=>x.n.split('_')[4]===c)&&mp(x)&&mm(x));
+    if(matches.length){const e=best(matches);return driveUrl(e.u);}
+  }
+  const matches=AD_IMAGES.filter(x=>mt(x)&&mp(x)&&mm(x));
+  if(matches.length){const e=best(matches);return driveUrl(e.u);}
+  const nameMatches=AD_IMAGES.filter(x=>mt(x)&&mm(x));
+  if(nameMatches.length){const e=best(nameMatches);return driveUrl(e.u);}
+  const anyMatches=AD_IMAGES.filter(x=>mt(x));
+  if(anyMatches.length){const e=best(anyMatches);return driveUrl(e.u);}
+  return'';
+}
+const C={Lina:'#378ADD',Phoebe:'#D4537E',Sarah:'#1D9E75',Iris:'#9B59B6',Partner:'#5C6570'};
+const CB={Lina:'#E6F1FB',Phoebe:'#FBEAF0',Sarah:'#E1F5EE',Iris:'#F0E6F6',Partner:'#EEF0F2'};
+const CT={Lina:'#0C447C',Phoebe:'#72243E',Sarah:'#085041',Iris:'#5B2D6E',Partner:'#3D454D'};
+const PC={'GPG':'#7F77DD','PCO':'#1D9E75','DCO':'#D4537E','BCA/BPD':'#D85A30','PCM':'#BA7517','GS':'#D9A006','GSP':'#5B8AD9','OTC':'#2A7AB5'};
+const PB={'GPG':'#EEEDFE','PCO':'#E1F5EE','DCO':'#FBEAF0','BCA/BPD':'#FAECE7','PCM':'#FAEEDA','GS':'#FEF6E0','GSP':'#E8EFF9','OTC':'#E3F0FA'};
+const PT={'GPG':'#3C3489','PCO':'#085041','DCO':'#72243E','BCA/BPD':'#993C1D','PCM':'#633806','GS':'#6E5003','GSP':'#2B4A7A','OTC':'#14395A'};
+const PEOPLE=['Lina','Sarah','Phoebe','Iris'];
+const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthLabel(m){const[y,mo]=m.split('-');return(MONTH_NAMES[parseInt(mo,10)-1]||mo)+' '+y;}
+let RAW={meta:[],amz:[]};
+const CACHE_TTL=30*60*1000;
+function getCached(k){try{const i=localStorage.getItem(k);if(!i)return null;const{ts,d}=JSON.parse(i);if(Date.now()-ts>CACHE_TTL){localStorage.removeItem(k);return null;}return d;}catch(e){return null;}}
+function setCached(k,d){try{localStorage.setItem(k,JSON.stringify({ts:Date.now(),d}));}catch(e){}}
+function clearCache(){['meta_ulta_raw'].forEach(k=>localStorage.removeItem(k));}
+let curPage='creator',cM='clicks',cPM='clicks';
+let dateMode='monthly',curMonth='2026-03',customFrom='',customTo='';
+let cFilters={person:'All',media:'All',product:'All'};
+let cSort='purchases',cSortDir=-1,adPage=0,adNameSearch='',splitByCampaign=false;
+const ADS_PER_PAGE=30;
+let tC,mC;
+let curWeeks=new Set(),cWM='purchases',weeklyCharts=[],weeklyRenderGen=0;
+let curWeeksWC=new Set(),cWCM='purchases',weeklyCreativeCharts=[],weeklyCreativeRenderGen=0;
+let cFiltersWC={product:'All',person:'All'};
+const WC_MIN_SPEND=30000;
+const f=n=>Math.round(n).toLocaleString('ko-KR');
+const fd=(n,d=2)=>Number(n).toFixed(d);
+
+function parseCSV(text){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const headers=lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){
+      if(ch=='"')inQ=!inQ;
+      else if(ch==','&&!inQ){vals.push(cur);cur='';}
+      else cur+=ch;
+    }
+    vals.push(cur);
+    const obj={};headers.forEach((h,i)=>obj[h]=(vals[i]||'').trim());
+    return obj;
+  });
+}
+
+function parsePerson(name){
+  if(!name)return null;
+  const parts=name.split('_');
+  const personFromToken=token=>{
+    const leadingName=String(token||'').trim().match(/^[A-Za-z]+/);
+    if(!leadingName)return null;
+    return PEOPLE.find(person=>person.toLowerCase()===leadingName[0].toLowerCase())||null;
+  };
+  if(parts[0].toLowerCase()==='stella')return null;
+  const firstPerson=personFromToken(parts[0]);
+  if(firstPerson)return firstPerson;
+  if(parts[parts.length-1].toLowerCase()==='stella')return null;
+  // Sheet notes may follow a creator name, e.g. "Phoebe ★라스트데이(0726)".
+  const lastPerson=personFromToken(parts[parts.length-1]);
+  if(lastPerson)return lastPerson;
+  for(const part of parts){const person=personFromToken(part);if(person)return person;}
+  if(parts[parts.length-1]==='SB')return'Phoebe';
+  // Partnership ads: last underscore-token ends with -p
+  if(parts[parts.length-1].endsWith('-p'))return'Partner';
+  return null;
+}
+function parseProduct(name){
+  if(!name)return null;
+  const ALIASES={'BCA':'BCA/BPD','BPD':'BCA/BPD','PCF':'BCA/BPD'};
+  const SKIP=new Set(['VDO','IMG','SB','META','AD','ADS']);
+  const parts=name.split('_').map(p=>p.trim());
+  // Product codes occur in these positions in the supported naming formats.
+  // Unknown uppercase codes are returned as-is, so DCO and future products
+  // appear automatically without another dashboard code change.
+  for(const i of [3,4,1,0]){
+    const code=String(parts[i]||'').toUpperCase();
+    if(ALIASES[code])return ALIASES[code];
+    if(/^[A-Z][A-Z0-9/-]{1,11}$/.test(code)&&!SKIP.has(code)&&!PEOPLE.some(p=>p.toUpperCase()===code))return code;
+  }
+  return null;
+}
+function parseMedia(name){
+  if(!name)return null;
+  const parts=name.split('_');
+  return parts.includes('vdo')?'vdo':parts.includes('img')?'img':null;
+}
+function parseAdName(name){
+  if(!name)return null;
+  const parts=name.split('_');
+  for(let i=0;i<parts.length;i++){
+    if((parts[i]==='vdo'||parts[i]==='img')&&i+1<parts.length){
+      const rest=parts.slice(i+1);
+      const last=rest[rest.length-1];
+      // Partnership ads: last token ends with -p → join all tokens and strip -p suffix
+      if(last.endsWith('-p')){rest[rest.length-1]=last.slice(0,-2);return rest.join('_');}
+      return parts[i+1];
+    }
+  }
+  return null;
+}
+
+async function loadData(){
+  showLoading(true);
+  try{
+    // Apps Script returns JSON array-of-arrays: [[headers...], [row1...], ...]
+    function arrToObjs(json){
+      const rows=JSON.parse(json);
+      if(!rows||!rows.length)return[];
+      // Find header row (first row with 소재명 or 일자)
+      let hIdx=0;
+      for(let i=0;i<Math.min(5,rows.length);i++){
+        if(rows[i]&&rows[i].some(c=>{const s=String(c);return s.includes('소재명')||s.includes('일자')||s==='ad_name';})){hIdx=i;break;}
+      }
+      if(!rows[hIdx])return[];
+      const headers=rows[hIdx].map(h=>String(h).trim());
+      return rows.slice(hIdx+1).map(row=>{
+        const obj={};
+        headers.forEach((h,i)=>obj[h]=String(row[i]||'').trim());
+        return obj;
+      });
+    }
+
+    const fetchOpts={redirect:'follow'};
+
+    let mt=getCached('meta_ulta_raw');
+    if(!mt){
+      const response=await fetch(META_URL,fetchOpts);
+      if(!response.ok)throw new Error('Google Sheets request failed ('+response.status+')');
+      mt=await response.text();
+      setCached('meta_ulta_raw',mt);
+    }
+
+    // Build ad_name → image URL map
+    AD_IMAGES=[];
+
+    function parseNum(v){return parseFloat(String(v||'0').replace(/,/g,'').replace(/-/g,'0'))||0;}
+    function parseDateStr(raw){
+      const s=String(raw||'').trim();
+      if(!s)return null;
+      if(s.includes('T')){
+        const d=new Date(s);
+        if(isNaN(d))return null;
+        const kst=new Date(d.getTime()+9*60*60*1000);
+        return kst.toISOString().slice(0,10);
+      }
+      const m=s.match(/(\d{4}-\d{2}-\d{2})/);
+      return m?m[1]:null;
+    }
+
+    function parseMetaRows(text){
+      const rows=arrToObjs(text);
+      const droppedNoPerson=[];
+      const result=rows.map(r=>{
+        const keys=Object.keys(r);
+        const dateKey=keys.find(k=>k.includes('일자')||k.includes('날짜'))||keys[0];
+        const nameKey=keys.find(k=>k.includes('소재명'))||keys[1]||'';
+        const clickKey=keys.find(k=>k.includes('링크클릭'))||'';
+        // Cost Per ShopNowClick numerator: the meta-ulta `광고비` column.
+        const spendKey=keys.find(k=>k.includes('광고비'))||'';
+        const impKey=keys.find(k=>k.includes('노출'))||'';
+        const date=parseDateStr(r[dateKey]);
+        if(!date)return null;
+        const name=String(r[nameKey]||'');
+        const person=parsePerson(name);
+        if(!person){if(name)droppedNoPerson.push(name);return null;}
+        return{date,month:date.slice(0,7),person,
+          product:parseProduct(name),media:parseMedia(name),ad_name:parseAdName(name),raw_name:name,
+          campaign_type:name.split('_')[0]||null,
+          clicks:parseNum(r[clickKey]),spend:parseNum(r[spendKey]),impressions:parseNum(r[impKey])};
+      }).filter(Boolean);
+      if(droppedNoPerson.length)console.log('[META DROPPED person] 담당자 인식 실패:',droppedNoPerson);
+      const nullAdName=result.filter(r=>!r.ad_name&&r.product&&r.person);
+      if(nullAdName.length)console.log('[META NULL ad_name] vdo/img 없는 소재명:',nullAdName.map(r=>r.person+'|'+r.product+'|'+r.raw_name));
+      return result;
+    }
+
+    function parseAmzRows(text){
+      const rows=arrToObjs(text);
+      const dropped=[];
+      const result=rows.map(r=>{
+        const keys=Object.keys(r);
+        const dateKey=keys.find(k=>k.includes('일자')||k.includes('날짜'))||keys[0];
+        const purchKey=keys.find(k=>k.toLowerCase().replace(/[ _-]/g,'').includes('shopnowclick'))||'';
+        const purch=parseNum(r[purchKey]);
+        const date=parseDateStr(r[dateKey]);
+        if(!date){if(purch>0)dropped.push({reason:'date_fail',raw_date:r[dateKey],purch});return null;}
+        const nameKey=keys.find(k=>k.includes('소재명'))||keys[1]||'';
+        const rawName=String(r[nameKey]||'').trim();
+        const person=parsePerson(rawName);
+        if(!person){if(purch>0)dropped.push({reason:'person_fail',rawName,date,purch});return null;}
+        const product=parseProduct(rawName);
+        const ad_name=parseAdName(rawName);
+        return{date,month:date.slice(0,7),person,product,media:parseMedia(rawName),ad_name,campaign_type:rawName.split('_')[0]||null,purchases:purch};
+      }).filter(Boolean);
+      if(dropped.length)console.log('[AMZ DROPPED] 구매있는데 필터된 행:',dropped);
+      // 누락 진단: product null인 구매 행
+      const nullProd=result.filter(r=>r.purchases>0&&!r.product);
+      if(nullProd.length)console.log('[AMZ NULL PRODUCT] 구매있는데 product없는행:',nullProd.map(r=>r.date+'|'+r.person+'|'+r.ad_name+'|purch:'+r.purchases));
+      // 누락 진단: ad_name null인 구매 행 (vdo/img 없는 소재명)
+      const nullAdName=result.filter(r=>r.purchases>0&&r.product&&!r.ad_name);
+      if(nullAdName.length)console.log('[AMZ NULL ADNAME] 구매있는데 ad_name없는행:',nullAdName.map(r=>r.date+'|'+r.person+'|'+r.product+'|rawName확인필요|purch:'+r.purchases));
+      return result;
+    }
+
+    RAW.meta=parseMetaRows(mt);
+    // ShopNowClick is supplied by the same meta-ulta rows. It remains in the
+    // existing `purchases` field internally so the dashboard aggregation code
+    // can consume the new conversion metric without duplicating every formula.
+    RAW.amz=parseAmzRows(mt);
+    const allDates=[...RAW.meta.map(r=>r.date),...RAW.amz.map(r=>r.date)].filter(Boolean).sort();
+    if(allDates.length){
+      customFrom=allDates[0];customTo=allDates[allDates.length-1];
+      const df=document.getElementById('dateFrom'),dt=document.getElementById('dateTo');
+      df.min=customFrom;df.max=customTo;df.value=customFrom;
+      dt.min=customFrom;dt.max=customTo;dt.value=customTo;
+    }
+    const months=[...new Set([...RAW.meta.map(r=>r.month),...RAW.amz.map(r=>r.month)].filter(Boolean))].sort();
+    const metaMonths=[...new Set(RAW.meta.map(r=>r.month).filter(Boolean))].sort();
+    curMonth=metaMonths[metaMonths.length-1]||months[months.length-1]||'2026-03';
+    renderMonthPills(months);
+    showLoading(false);
+    refresh();
+  }catch(e){
+    showLoading(false);
+    const el=document.getElementById('loadError');
+    el.style.display='block';
+    el.textContent='데이터 로드 실패: '+e.message;
+    console.error(e);
+  }
+}
+
+function showLoading(show){
+  document.getElementById('loadingBar').style.display=show?'flex':'none';
+}
+
+function renderMonthPills(months){
+  const container=document.getElementById('monthly-pills');
+  container.innerHTML=months.map(m=>{
+    const lbl=monthLabel(m);
+    const active=m===curMonth?' active':'';
+    return '<button class="mpill'+active+'" onclick="switchMonth(\'' + m + '\',this)">'+lbl+'</button>';
+  }).join('');
+}
+
+function grp(arr,keys,vals){
+  const map={};
+  for(const r of arr){
+    const ck=keys.map(k=>r[k]).join('|||');
+    if(!map[ck]){map[ck]={};keys.forEach(k=>map[ck][k]=r[k]);vals.forEach(v=>map[ck][v]=0);}
+    vals.forEach(v=>map[ck][v]+=(r[v]||0));
+  }
+  return Object.values(map);
+}
+
+function computeData(from,to){
+  const meta=RAW.meta.filter(r=>r.date>=from&&r.date<=to);
+  const amz=RAW.amz.filter(r=>r.date>=from&&r.date<=to);
+  // Partnership ads excluded from By Creator (person-based cards); included in By Product and By Creative
+  const metaNP=meta.filter(r=>r.person!=='Partner');
+  const amzNP=amz.filter(r=>r.person!=='Partner');
+  const ctr_=(m)=>m.impressions>0?+(m.clicks/m.impressions*100).toFixed(2):0;
+  const cpc_=(m)=>m.clicks>0?Math.round(m.spend/m.clicks):0;
+
+  const ps_m=grp(metaNP,['person'],['clicks','spend','impressions']);
+  const ps_a=grp(amzNP,['person'],['purchases']);
+  const ps=ps_m.map(m=>{
+    const a=ps_a.find(x=>x.person===m.person)||{purchases:0};
+    return Object.assign({},m,{ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases});
+  });
+
+  const pm_m=grp(metaNP,['person','media'],['clicks','spend','impressions']);
+  const pm_a=grp(amzNP,['person','media'],['purchases']);
+  const pm=pm_m.map(m=>{
+    const a=pm_a.find(x=>x.person===m.person&&x.media===m.media)||{purchases:0};
+    return Object.assign({},m,{ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases});
+  });
+
+  const daily_m=grp(metaNP,['date','person'],['clicks','spend','impressions']);
+  const daily_a=grp(amzNP,['date','person'],['purchases']);
+  const daily=daily_m.map(m=>{
+    const a=daily_a.find(x=>x.date===m.date&&x.person===m.person)||{purchases:0};
+    return{date:m.date,p:m.person,clicks:m.clicks,spend:m.spend,ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases};
+  });
+
+  const pp_m=grp(meta,['product','person'],['clicks','spend','impressions']);
+  const pp_a=grp(amz,['product','person'],['purchases']);
+  const pp=pp_m.filter(m=>m.product).map(m=>{
+    const a=pp_a.find(x=>x.product===m.product&&x.person===m.person)||{purchases:0};
+    return Object.assign({},m,{ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases});
+  });
+
+  const psum_m=grp(meta,['product'],['clicks','spend','impressions']);
+  const psum_a=grp(amz,['product'],['purchases']);
+  const psum=psum_m.filter(m=>m.product).map(m=>{
+    const a=psum_a.find(x=>x.product===m.product)||{purchases:0};
+    return Object.assign({},m,{ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases});
+  });
+
+  const adGroupKeys=splitByCampaign?['ad_name','person','product','media','campaign_type']:['ad_name','person','product','media'];
+  const amzGroupKeys=splitByCampaign?['ad_name','person','product','campaign_type']:['ad_name','person','product'];
+  const ads_m=grp(meta,adGroupKeys,['clicks','spend','impressions']);
+  const ads_a=grp(amz,amzGroupKeys,['purchases']);
+  // Meta-AMZ join은 campaign_type 제외 (Meta는 한국어, AMZ는 영문 코드라 불일치)
+  const ads_a_join=splitByCampaign?grp(amz,['ad_name','person','product'],['purchases']):ads_a;
+  const joinKey=(r)=>r.ad_name+'|||'+r.person+'|||'+r.product;
+  // 누락 진단: ad_name null (vdo/img 없는 소재명) per product
+  const nullAdNameAds=ads_m.filter(m=>(!m.ad_name||m.ad_name==='null')&&m.product);
+  if(nullAdNameAds.length){
+    const cnt={};nullAdNameAds.forEach(r=>{cnt[r.product]=(cnt[r.product]||0)+1;});
+    console.log('[META DROPPED ad_name] vdo/img 없어서 누락된 소재 per product:',cnt);
+  }
+  // Meta 기반 rows (clicks/spend/impressions + ShopNowClick join)
+  const metaAds=ads_m.filter(m=>m.ad_name&&m.ad_name!='null'&&m.product).map(m=>{
+    const a=ads_a_join.find(x=>joinKey(x)===joinKey(m))||{purchases:0};
+    return Object.assign({},m,{ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases});
+  });
+  // AMZ 전용 rows (Meta에 없지만 구매 있는 소재)
+  const metaKeys=new Set(ads_m.filter(m=>m.ad_name&&m.product).map(m=>joinKey(m)));
+  const amzOnly=ads_a.filter(x=>x.purchases>0&&x.ad_name&&x.product&&!metaKeys.has(joinKey(x)))
+    .map(x=>({ad_name:x.ad_name,person:x.person,product:x.product,campaign_type:x.campaign_type||null,media:null,clicks:0,spend:0,impressions:0,ctr:0,cpc:0,purchases:x.purchases}));
+  const ads=[...metaAds,...amzOnly].sort((a,b)=>b.clicks-a.clicks);
+
+  return{ps,pm,daily,pp,psum,ads};
+}
+
+function getDateRange(){
+  if(dateMode==='monthly')return{from:curMonth+'-01',to:curMonth+'-31'};
+  return{from:customFrom,to:customTo};
+}
+function D(){const{from,to}=getDateRange();return computeData(from,to);}
+function getDateLabel(){return dateMode==='monthly'?monthLabel(curMonth):customFrom+' ~ '+customTo;}
+function isNoAmz(){return false;}
+
+function fmtLocalDate(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function addDays(dateStr,n){
+  const d=new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return fmtLocalDate(d);
+}
+function daysBetween(from,to){
+  const days=[];
+  let cur=from;
+  while(cur<=to){days.push(cur);cur=addDays(cur,1);}
+  return days;
+}
+function isoWeekStart(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const dow=(d.getDay()+6)%7; // Mon=0..Sun=6
+  d.setDate(d.getDate()-dow);
+  return fmtLocalDate(d);
+}
+function weekLabel(weekStart){
+  const end=addDays(weekStart,6);
+  const fmt=s=>{const p=s.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);};
+  return fmt(weekStart)+'–'+fmt(end);
+}
+function weeksInRange(from,to){
+  const weeks=[];
+  let cur=isoWeekStart(from);
+  while(cur<=to){weeks.push(cur);cur=addDays(cur,7);}
+  return weeks;
+}
+function computeProductDaily(days){
+  if(!days.length)return{days,products:[],byProduct:{}};
+  const daySet=new Set(days);
+  const meta=RAW.meta.filter(r=>r.product&&daySet.has(r.date));
+  const amz=RAW.amz.filter(r=>r.product&&daySet.has(r.date));
+  const ctr_=(m)=>m.impressions>0?+(m.clicks/m.impressions*100).toFixed(2):0;
+  const cpc_=(m)=>m.clicks>0?Math.round(m.spend/m.clicks):0;
+  const m_g=grp(meta,['date','product'],['clicks','spend','impressions']);
+  const a_g=grp(amz,['date','product'],['purchases']);
+  const mMap=new Map(m_g.map(r=>[r.date+'|||'+r.product,r]));
+  const aMap=new Map(a_g.map(r=>[r.date+'|||'+r.product,r]));
+  const products=[...new Set([...m_g.map(r=>r.product),...a_g.map(r=>r.product)])];
+  const byProduct={};
+  products.forEach(p=>{
+    byProduct[p]=days.map(d=>{
+      const key=d+'|||'+p;
+      const m=mMap.get(key)||{clicks:0,spend:0,impressions:0};
+      const a=aMap.get(key)||{purchases:0};
+      return{date:d,clicks:m.clicks,spend:m.spend,ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases};
+    });
+  });
+  return{days,products,byProduct};
+}
+function computeCreativeDaily(days,productFilter,personFilter){
+  if(!days.length)return{days,creatives:[],byCreative:{}};
+  const daySet=new Set(days);
+  const passFilter=r=>r.ad_name&&r.product&&daySet.has(r.date)&&(productFilter==='All'||r.product===productFilter)&&(personFilter==='All'||r.person===personFilter);
+  const meta=RAW.meta.filter(passFilter);
+  const amz=RAW.amz.filter(passFilter);
+  const ctr_=(m)=>m.impressions>0?+(m.clicks/m.impressions*100).toFixed(2):0;
+  const cpc_=(m)=>m.clicks>0?Math.round(m.spend/m.clicks):0;
+  const m_g=grp(meta,['date','ad_name','person','product'],['clicks','spend','impressions']);
+  const a_g=grp(amz,['date','ad_name','person','product'],['purchases']);
+  const keyOf=r=>r.ad_name+'|||'+r.person+'|||'+r.product;
+  const mMap=new Map(m_g.map(r=>[r.date+'|||'+keyOf(r),r]));
+  const aMap=new Map(a_g.map(r=>[r.date+'|||'+keyOf(r),r]));
+  const keySet=new Set([...m_g.map(keyOf),...a_g.map(keyOf)]);
+  const byCreative={},totalSpend={};
+  keySet.forEach(key=>{
+    byCreative[key]=days.map(d=>{
+      const mk=d+'|||'+key;
+      const m=mMap.get(mk)||{clicks:0,spend:0,impressions:0};
+      const a=aMap.get(mk)||{purchases:0};
+      return{date:d,clicks:m.clicks,spend:m.spend,ctr:ctr_(m),cpc:cpc_(m),purchases:a.purchases};
+    });
+    totalSpend[key]=byCreative[key].reduce((s,r)=>s+r.spend,0);
+  });
+  const creatives=[...keySet].filter(key=>totalSpend[key]>WC_MIN_SPEND).map(key=>{
+    const[ad_name,person,product]=key.split('|||');
+    return{key,ad_name,person,product,totalSpend:totalSpend[key]};
+  }).sort((a,b)=>b.totalSpend-a.totalSpend);
+  return{days,creatives,byCreative};
+}
+
+function updateMeta(){
+  const lbl=getDateLabel(),noAmz=isNoAmz();
+  ['creatorMeta','productMeta','creativeMeta','weeklyMeta','weeklyCreativeMeta'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.textContent=lbl+' · meta-ulta';
+  });
+  document.getElementById('novNotice').style.display=noAmz?'block':'none';
+}
+
+function refresh(){
+  updateMeta();
+  if(curPage==='creator'){renderPCards();renderTrend();renderMedia();}
+  else if(curPage==='product')renderProdPage();
+  else if(curPage==='creative'){renderProdPills();renderCreativeTable();}
+  else if(curPage==='weekly')renderWeeklyPage();
+  else if(curPage==='weeklycreative')renderWeeklyCreativePage();
+}
+
+function setDateMode(mode,btn){
+  dateMode=mode;
+  document.querySelectorAll('.dmt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('monthly-pills').style.display=mode==='monthly'?'flex':'none';
+  document.getElementById('custom-range').style.display=mode==='custom'?'flex':'none';
+  if(mode==='monthly')refresh();
+}
+function switchMonth(m,btn){
+  curMonth=m;
+  document.querySelectorAll('.mpill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  refresh();
+}
+function applyCustomRange(){
+  customFrom=document.getElementById('dateFrom').value;
+  customTo=document.getElementById('dateTo').value;
+  if(customFrom>customTo){alert('시작일이 종료일보다 늦을 수 없어요!');return;}
+  refresh();
+}
+function goPage(pg,btn){
+  curPage=pg;
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pg-'+pg).classList.add('active');
+  btn.classList.add('active');
+  if(pg==='product')renderProdPage();
+  else if(pg==='creative'){renderProdPills();renderCreativeTable();}
+  else if(pg==='weekly')renderWeeklyPage();
+  else if(pg==='weeklycreative')renderWeeklyCreativePage();
+}
+
+function renderPCards(){
+  const ps=D().ps||[];
+  const sorted={
+    clicks:[...ps].sort((a,b)=>b.clicks-a.clicks).map(x=>x.person),
+    ctr:[...ps].sort((a,b)=>b.ctr-a.ctr).map(x=>x.person),
+    cpc:[...ps].sort((a,b)=>a.cpc-b.cpc).map(x=>x.person),
+    purchases:[...ps].sort((a,b)=>b.purchases-a.purchases).map(x=>x.person)
+  };
+  const rl={clicks:'clicks',ctr:'CTR',cpc:'CPC (lower)',purchases:'ShopNowClick'};
+  const noAmz=isNoAmz();
+  document.getElementById('pcards').innerHTML=ps.map(p=>{
+    const rank=sorted[cM].indexOf(p.person)+1;
+    const pm=D().pm||[];
+    const vdo=pm.find(m=>m.person===p.person&&m.media==='vdo');
+    const img=pm.find(m=>m.person===p.person&&m.media==='img');
+    const tc=(vdo?.clicks||0)+(img?.clicks||0);
+    const vp=tc>0?Math.round((vdo?.clicks||0)/tc*100):0;
+    return '<div class="pcard">'+
+      '<div class="ph"><div class="av" style="background:'+CB[p.person]+';color:'+CT[p.person]+'">'+p.person[0]+'</div>'+
+      '<div><div class="pname">'+p.person+'</div><div class="prank">Rank #'+rank+' by '+rl[cM]+'</div></div></div>'+
+      '<div class="srow">'+
+      '<div class="st"><div class="stl">Clicks</div><div class="stv">'+f(p.clicks)+'</div></div>'+
+      '<div class="st"><div class="stl">CTR</div><div class="stv">'+fd(p.ctr)+'%</div></div>'+
+      '<div class="st"><div class="stl">CPC</div><div class="stv">₩'+f(p.cpc)+'</div></div>'+
+      '</div><div class="srow">'+
+      '<div class="st"><div class="stl">Spend</div><div class="stv sm">₩'+f(p.spend)+'</div></div>'+
+      '<div class="st"><div class="stl">ShopNowClick</div><div class="stv'+(p.purchases>0?' good':'')+'">'+(noAmz?'—':p.purchases)+'</div></div>'+
+      '</div>'+
+      '<div class="mlabels"><span>Video '+vp+'%</span><span>Image '+(100-vp)+'%</span></div>'+
+      '<div class="btrack"><div class="bfill" style="width:'+vp+'%;background:'+C[p.person]+'"></div></div>'+
+      '</div>';
+  }).join('');
+}
+
+function renderTrend(){
+  const d=D().daily||[];
+  const labels={clicks:'Daily clicks',ctr:'Daily CTR (%)',cpc:'Daily CPC (₩)',purchases:'Daily ShopNowClick'};
+  document.getElementById('trendT').textContent=labels[cM]+' by creator';
+  const dates=[...new Set(d.map(r=>r.date))].sort();
+  const ds=function(person){return{label:person,
+    data:dates.map(dt=>{const r=d.find(x=>x.date===dt&&x.p===person);return r?r[cM]:null;}),
+    borderColor:C[person],backgroundColor:C[person]+'22',
+    borderWidth:2,pointRadius:2,pointHoverRadius:5,spanGaps:true,tension:.3,fill:false};};
+  const ctx=document.getElementById('trendC').getContext('2d');
+  if(tC)tC.destroy();
+  tC=new Chart(ctx,{
+    type:'line',
+    data:{labels:dates,datasets:PEOPLE.map(ds)},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:11},color:'#888',maxRotation:45,autoSkip:true,maxTicksLimit:18,callback:function(v,i){const d=dates[i];if(!d)return d;const p=d.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);}},grid:{display:false}},
+        y:{ticks:{font:{size:11},color:'#888'},grid:{color:'rgba(128,128,128,.1)'}}
+      }
+    }
+  });
+}
+
+function renderMedia(){
+  const pm=D().pm||[];
+  const ppl=PEOPLE;
+  const gv=function(p,m){const r=pm.find(x=>x.person===p&&x.media===m);return r?r[cM]:0;};
+  const mlabels={clicks:'Clicks',ctr:'CTR (%)',cpc:'CPC (₩)',purchases:'ShopNowClick'};
+  document.getElementById('mediaT').textContent='Video vs image — '+mlabels[cM]+' by creator';
+  const ctx=document.getElementById('mediaC').getContext('2d');
+  if(mC)mC.destroy();
+  mC=new Chart(ctx,{
+    type:'bar',
+    data:{labels:ppl,datasets:[
+      {label:'Video',data:ppl.map(p=>gv(p,'vdo')),backgroundColor:ppl.map(p=>C[p]),borderRadius:4,barPercentage:.42},
+      {label:'Image',data:ppl.map(p=>gv(p,'img')),backgroundColor:ppl.map(p=>C[p]+'55'),borderRadius:4,barPercentage:.42}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:12},color:'#888'},grid:{display:false}},
+        y:{ticks:{font:{size:11},color:'#888'},grid:{color:'rgba(128,128,128,.1)'}}
+      }
+    }
+  });
+}
+
+function switchM(m,btn){
+  cM=m;document.querySelectorAll('#mtabs .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderPCards();renderTrend();renderMedia();
+}
+
+function renderProdPage(){renderPSum();renderPDGrid();}
+function renderWeeklyPage(){renderWeekPills();renderWeeklyCharts();}
+
+function renderPSum(){
+  const ps=D().psum||[];
+  const noAmz=isNoAmz();
+  document.getElementById('psgrid').innerHTML=ps.map(p=>{
+    return '<div class="pscard">'+
+      '<div class="psname" style="color:'+(PC[p.product]||'var(--text)')+'">'+(p.product||'—')+'</div>'+
+      '<div class="pml">Clicks</div><div class="pmv">'+f(p.clicks)+'</div>'+
+      '<div class="pml">CTR</div><div class="pmv">'+fd(p.ctr)+'%</div>'+
+      '<div class="pml">Spend</div><div class="pmv">₩'+f(p.spend)+'</div>'+
+      '<div class="pml">CPC</div><div class="pmv">₩'+f(p.cpc)+'</div>'+
+      '<div class="pml">ShopNowClick</div><div class="pmv" style="color:'+(p.purchases>0?'#0F6E56':'var(--muted)')+'">'+(noAmz?'—':(p.purchases||'—'))+'</div>'+
+      '</div>';
+  }).join('');
+}
+
+function renderPDGrid(){
+  const m=cPM;
+  const pp=D().pp||[];
+  const prods=[...new Set(pp.map(r=>r.product))];
+  const mLabels={clicks:'CLICKS',ctr:'CTR',cpc:'CPC',spend:'SPEND',purchases:'SHOPNOWCLICK'};
+  document.getElementById('pdgrid').innerHTML=prods.map(function(prod){
+    const rows=pp.filter(r=>r.product===prod);
+    const vals=rows.map(r=>r[m]).filter(v=>v>0);
+    const mx=vals.length?Math.max(...vals):1;
+    let html='<div class="pdcard"><div class="pdname"><span style="color:'+(PC[prod]||'var(--text)')+'">'+prod+'</span>'+
+      '<span class="ptag">'+mLabels[m]+'</span></div>';
+    rows.sort((a,b)=>m==='cpsnc'?(a[m]||Infinity)-(b[m]||Infinity):b[m]-a[m]).forEach(function(r){
+      const val=r[m]||0;
+      const pct=mx>0&&val>0?Math.round(val/mx*100):0;
+      let dv=m==='clicks'?f(val):m==='ctr'?fd(val)+'%':m==='purchases'?(val>0?val+'건':'—'):(val>0?'₩'+f(val):'—');
+      html+='<div class="crow">'+
+        '<div class="clabel"><span class="cdot" style="background:'+C[r.person]+'"></span><span class="cname">'+r.person+'</span></div>'+
+        '<div class="cbw"><div class="cbt"><div class="cbf" style="width:'+pct+'%;background:'+C[r.person]+'"></div></div></div>'+
+        '<div class="cval" style="color:var(--text)">'+dv+'</div>'+
+        '</div>';
+    });
+    html+='</div>';
+    return html;
+  }).join('');
+}
+
+function renderWeekPills(){
+  const pillsEl=document.getElementById('weekPills'),noteEl=document.getElementById('weeklyNote');
+  if(dateMode==='custom'){
+    pillsEl.style.display='none';
+    pillsEl.innerHTML='';
+    if(noteEl)noteEl.textContent='선택한 기간의 일별 추이';
+    return;
+  }
+  pillsEl.style.display='flex';
+  if(noteEl)noteEl.textContent='선택한 기간의 일별 추이 · 중복 선택 가능';
+  const{from,to}=getDateRange();
+  const weeks=weeksInRange(from,to);
+  if(!weeks.length)return;
+  curWeeks=new Set([...curWeeks].filter(w=>weeks.includes(w)));
+  if(!curWeeks.size)curWeeks.add(weeks[0]);
+  pillsEl.innerHTML=weeks.map(w=>{
+    const active=curWeeks.has(w)?' active':'';
+    return '<button class="fb'+active+'" onclick="toggleWeek(\''+w+'\',this)">'+weekLabel(w)+'</button>';
+  }).join('');
+}
+function toggleWeek(w,btn){
+  if(curWeeks.has(w))curWeeks.delete(w);else curWeeks.add(w);
+  btn.classList.toggle('active');
+  renderWeeklyCharts();
+}
+function getWeeklyDays(){
+  if(dateMode==='custom'){
+    const{from,to}=getDateRange();
+    return daysBetween(from,to);
+  }
+  return[...curWeeks].sort().flatMap(w=>{const a=[];for(let i=0;i<7;i++)a.push(addDays(w,i));return a;});
+}
+function renderWeeklyCharts(){
+  const myGen=++weeklyRenderGen;
+  const container=document.getElementById('weeklyCharts');
+  weeklyCharts.forEach(c=>c.destroy());
+  weeklyCharts=[];
+  const days=getWeeklyDays();
+  if(!days.length){container.innerHTML='<div class="no-data">표시할 기간을 선택해주세요.</div>';return;}
+  const{products,byProduct}=computeProductDaily(days);
+  const mLabels={purchases:'ShopNowClick'};
+  const dayLabels=days.map(d=>{const p=d.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);});
+  const rangeLabel=dayLabels[0]+'–'+dayLabels[dayLabels.length-1];
+  if(!products.length){container.innerHTML='<div class="no-data">이 기간에는 데이터가 없어요.</div>';return;}
+  const dense=days.length>60;
+  container.innerHTML=products.map(function(p,i){
+    return '<div class="ccard"><div class="ctop"><div class="ctitle">'+
+      '<span style="color:'+(PC[p]||'var(--text)')+'">'+p+'</span> — '+mLabels[cWM]+' ('+rangeLabel+')'+
+      '</div></div><div style="position:relative;width:100%;height:180px;"><canvas id="wchart-'+i+'"></canvas></div></div>';
+  }).join('');
+  // Chart creation is spread across separate tasks so a wide date range
+  // (many points × many product charts) can't block the main thread long
+  // enough to trigger the browser's "page unresponsive" warning.
+  products.forEach(function(p,i){
+    setTimeout(function(){
+      if(myGen!==weeklyRenderGen)return;
+      const canvas=document.getElementById('wchart-'+i);
+      if(!canvas)return;
+      const color=PC[p]||'#378ADD';
+      const data=byProduct[p].map(r=>r[cWM]||0);
+      weeklyCharts.push(new Chart(canvas.getContext('2d'),{
+        type:'line',
+        data:{labels:dayLabels,datasets:[{data,borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:dense?0:3,pointHoverRadius:5,tension:.3,fill:true}]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          animation:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{font:{size:11},color:'#888',maxRotation:45,autoSkip:true,maxTicksLimit:20},grid:{display:false}},
+            y:{ticks:{font:{size:11},color:'#888'},grid:{color:'rgba(128,128,128,.1)'}}
+          }
+        }
+      }));
+    },0);
+  });
+}
+
+function switchPM(m,btn){
+  cPM=m;document.querySelectorAll('#pmtabs .pmtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderPDGrid();
+}
+function switchWM(m,btn){
+  cWM=m;document.querySelectorAll('#wpmtabs .pmtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderWeeklyCharts();
+}
+
+function renderWeeklyCreativePage(){renderWeekPillsWC();renderWCProdPills();renderWeeklyCreativeCharts();}
+function renderWeekPillsWC(){
+  const pillsEl=document.getElementById('weekPillsWC');
+  const{from,to}=getDateRange();
+  const weeks=weeksInRange(from,to);
+  if(!weeks.length)return;
+  curWeeksWC=new Set([...curWeeksWC].filter(w=>weeks.includes(w)));
+  if(!curWeeksWC.size)curWeeksWC.add(weeks[0]);
+  pillsEl.innerHTML=weeks.map(w=>{
+    const active=curWeeksWC.has(w)?' active':'';
+    return '<button class="fb'+active+'" onclick="toggleWeekWC(\''+w+'\',this)">'+weekLabel(w)+'</button>';
+  }).join('');
+}
+function toggleWeekWC(w,btn){
+  if(curWeeksWC.has(w))curWeeksWC.delete(w);else curWeeksWC.add(w);
+  btn.classList.toggle('active');
+  renderWeeklyCreativeCharts();
+}
+function switchWCM(m,btn){
+  cWCM=m;document.querySelectorAll('#wcpmtabs .pmtab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderWeeklyCreativeCharts();
+}
+function renderWCProdPills(){
+  const prods=['All',...new Set(RAW.meta.map(r=>r.product).filter(Boolean))];
+  document.getElementById('wcProdPills').innerHTML=prods.map(function(p){
+    const isActive=cFiltersWC.product===p;
+    const bg=isActive?(p==='All'?'var(--surface2)':(PB[p]||'var(--surface2)')):'transparent';
+    const tc=isActive?(p==='All'?'var(--text)':(PT[p]||'var(--text)')):'var(--muted)';
+    const bc=isActive?(p==='All'?'var(--text)':(PC[p]||'var(--text)')):'var(--border)';
+    return '<button class="prod-pill'+(isActive?' active':'')+'" style="background:'+bg+';color:'+tc+';border-color:'+bc+'" onclick="setWCFilter(\'product\',\''+p+'\',this)">'+p+'</button>';
+  }).join('');
+}
+function setWCFilter(key,val,btn){
+  cFiltersWC[key]=val;
+  if(key==='product')renderWCProdPills();
+  else{
+    document.querySelectorAll('#wcCreatorFilter .fb').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  renderWeeklyCreativeCharts();
+}
+function renderWeeklyCreativeCharts(){
+  const myGen=++weeklyCreativeRenderGen;
+  const container=document.getElementById('weeklyCreativeCharts');
+  weeklyCreativeCharts.forEach(c=>c.destroy());
+  weeklyCreativeCharts=[];
+  const days=[...curWeeksWC].sort().flatMap(w=>{const a=[];for(let i=0;i<7;i++)a.push(addDays(w,i));return a;});
+  if(!days.length){container.innerHTML='<div class="no-data">표시할 기간을 선택해주세요.</div>';return;}
+  const{creatives,byCreative}=computeCreativeDaily(days,cFiltersWC.product,cFiltersWC.person);
+  const mLabels={purchases:'ShopNowClick'};
+  const dayLabels=days.map(d=>{const p=d.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);});
+  const rangeLabel=dayLabels[0]+'–'+dayLabels[dayLabels.length-1];
+  if(!creatives.length){container.innerHTML='<div class="no-data">조건에 맞는 소재가 없어요 (광고비 ₩'+f(WC_MIN_SPEND)+' 이상).</div>';return;}
+  const dense=days.length>60;
+  const{from:imgFrom,to:imgTo}=getDateRange();
+  container.innerHTML=creatives.map(function(c,i){
+    const thumbUrl=getAdImg(c.ad_name,c.product,c.person,imgFrom,imgTo);
+    const thumbHtml=thumbUrl?'<img class="ad-thumb" src="'+thumbUrl+'" loading="lazy" onerror="this.style.display=&quot;none&quot;" onclick="openImg(\''+thumbUrl+'\')" style="cursor:zoom-in;flex-shrink:0;">':'<div class="ad-thumb" style="flex-shrink:0;"></div>';
+    return '<div class="ccard"><div style="display:flex;gap:12px;align-items:flex-start;">'+
+      thumbHtml+
+      '<div style="flex:1;min-width:0;">'+
+      '<div class="ctitle">'+
+      '<span style="color:'+(PC[c.product]||'var(--text)')+'">'+(c.ad_name||'—')+'</span> '+
+      '<span class="ptag">'+c.product+'</span> '+
+      '<span class="pp" style="background:'+(CB[c.person]||'var(--surface2)')+';color:'+(CT[c.person]||'var(--muted)')+';margin-left:4px">'+c.person+'</span>'+
+      ' — '+mLabels[cWCM]+' ('+rangeLabel+')'+
+      '</div>'+
+      '<div style="position:relative;width:100%;height:180px;"><canvas id="wcchart-'+i+'"></canvas></div>'+
+      '</div></div></div>';
+  }).join('');
+  creatives.forEach(function(c,i){
+    setTimeout(function(){
+      if(myGen!==weeklyCreativeRenderGen)return;
+      const canvas=document.getElementById('wcchart-'+i);
+      if(!canvas)return;
+      const color=PC[c.product]||'#378ADD';
+      const data=byCreative[c.key].map(r=>r[cWCM]||0);
+      weeklyCreativeCharts.push(new Chart(canvas.getContext('2d'),{
+        type:'line',
+        data:{labels:dayLabels,datasets:[{data,borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:dense?0:3,pointHoverRadius:5,tension:.3,fill:true}]},
+        options:{
+          responsive:true,maintainAspectRatio:false,
+          animation:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{font:{size:11},color:'#888',maxRotation:45,autoSkip:true,maxTicksLimit:20},grid:{display:false}},
+            y:{ticks:{font:{size:11},color:'#888'},grid:{color:'rgba(128,128,128,.1)'}}
+          }
+        }
+      }));
+    },0);
+  });
+}
+
+function renderProdPills(){
+  const ads=D().ads||[];
+  const prods=['All',...new Set(ads.map(a=>a.product).filter(Boolean))];
+  document.getElementById('prodPills').innerHTML=prods.map(function(p){
+    const isActive=cFilters.product===p;
+    const bg=isActive?(p==='All'?'var(--surface2)':(PB[p]||'var(--surface2)')):'transparent';
+    const tc=isActive?(p==='All'?'var(--text)':(PT[p]||'var(--text)')):'var(--muted)';
+    const bc=isActive?(p==='All'?'var(--text)':(PC[p]||'var(--text)')):'var(--border)';
+    return '<button class="prod-pill'+(isActive?' active':'')+'" style="background:'+bg+';color:'+tc+';border-color:'+bc+'" onclick="setProdFilter(\'' + p + '\',this)">'+p+'</button>';
+  }).join('');
+}
+
+function setProdFilter(p,btn){cFilters.product=p;adPage=0;renderProdPills();renderCreativeTable();}
+
+function setCF(key,val,btn){
+  cFilters[key]=val;
+  const group=key==='person'?['All','Lina','Phoebe','Sarah','Iris','Partner']:['All','vdo','img'];
+  document.querySelectorAll('.filter-bar .fb').forEach(function(b){
+    const txt=b.textContent.trim();
+    const inGroup=group.some(g=>g===txt||(g==='vdo'&&txt==='Video')||(g==='img'&&txt==='Image'));
+    if(inGroup)b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  adPage=0;renderCreativeTable();
+}
+
+function toggleSplitCampaign(){
+  splitByCampaign=!splitByCampaign;
+  const btn=document.getElementById('splitCampaignBtn');
+  btn.classList.toggle('active',splitByCampaign);
+  // Insert/remove Campaign column header
+  const thead=document.getElementById('creativeThead');
+  const existing=document.getElementById('campaignTh');
+  if(splitByCampaign&&!existing){
+    const th=document.createElement('th');th.id='campaignTh';th.textContent='캠페인';
+    thead.insertBefore(th,thead.children[4]); // after Creator
+  }else if(!splitByCampaign&&existing){existing.remove();}
+  adPage=0;renderCreativeTable();
+}
+function setCS(s,btn){
+  if(s===cSort)cSortDir*=-1;else{cSort=s;cSortDir=-1;}
+  if(btn){document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  adPage=0;renderCreativeTable();
+}
+
+function renderCreativeTable(){
+  let ads=[...(D().ads||[])];
+  if(cFilters.product!=='All')ads=ads.filter(a=>a.product===cFilters.product);
+  if(cFilters.person!=='All')ads=ads.filter(a=>a.person===cFilters.person);
+  if(cFilters.media!=='All')ads=ads.filter(a=>a.media===cFilters.media);
+  if(adNameSearch)ads=ads.filter(a=>a.ad_name&&a.ad_name.toLowerCase().includes(adNameSearch));
+  ads.sort(function(a,b){
+    const av=a[cSort]||0,bv=b[cSort]||0;
+    if(typeof av==='string')return cSortDir*av.localeCompare(bv);
+    return cSortDir*(av-bv);
+  });
+  if(!ads.length){
+    document.getElementById('creativeTbody').innerHTML='<tr><td colspan="10" class="no-data">해당 조건의 소재가 없어요.</td></tr>';
+    document.getElementById('adPagination').innerHTML='';
+    return;
+  }
+  const totalPages=Math.ceil(ads.length/ADS_PER_PAGE);
+  if(adPage>=totalPages)adPage=totalPages-1;
+  const start=adPage*ADS_PER_PAGE,end=start+ADS_PER_PAGE;
+  const pageAds=ads.slice(start,end);
+  const {from:imgFrom,to:imgTo}=getDateRange();
+  const rb=['#B5D4F4','#D3D1C7','#FAC775'],rt=['#0C447C','#444441','#633806'];
+  document.getElementById('creativeTbody').innerHTML=pageAds.map(function(a,idx){
+    var i=start+idx;
+    var thumbUrl=getAdImg(a.ad_name,a.product,a.person,imgFrom,imgTo,a.media);
+    var thumbHtml=thumbUrl?'<img class="ad-thumb" src="'+thumbUrl+'" loading="lazy" onerror="this.style.display=&quot;none&quot;" onclick="openImg(\''+thumbUrl+'\')" style="cursor:zoom-in">':'';
+    return '<tr>'+
+      '<td style="padding-left:14px"><span class="rank-num" style="background:'+(i<3?rb[i]:'var(--surface2)')+';color:'+(i<3?rt[i]:'var(--muted)')+'">'+(i+1)+'</span></td>'+
+      '<td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+(a.ad_name||'')+'">'+(a.ad_name||'—')+'</td>'+
+      '<td class="ad-thumb-cell">'+thumbHtml+'</td>'+
+      '<td><span class="pp" style="background:'+(CB[a.person]||'var(--surface2)')+';color:'+(CT[a.person]||'var(--muted)')+'">'+((a.person==='Partner'&&a.ad_name)?a.ad_name:a.person)+'</span></td>'+
+      (splitByCampaign?'<td style="font-size:12px;color:var(--muted)">'+(a.campaign_type||'—')+'</td>':'')+
+      '<td>'+(a.media?'<span class="bdg '+(a.media==='vdo'?'bvdo':'bimg')+'">'+(a.media==='vdo'?'Video':'Image')+'</span>':'—')+'</td>'+
+      '<td style="font-weight:600">'+f(a.clicks)+'</td>'+
+      '<td style="font-size:12px">₩'+f(a.spend)+'</td>'+
+      '<td>'+fd(a.ctr)+'%</td>'+
+      '<td>₩'+f(a.cpc)+'</td>'+
+      '<td style="font-weight:600;color:'+(a.purchases>0?'#0F6E56':'var(--muted)')+'">'+(a.purchases>0?a.purchases+'건':'—')+'</td>'+
+      '</tr>';
+  }).join('');
+  // Pagination
+  var pgHtml='<button class="pg-btn" onclick="goAdPage(0)"'+(adPage===0?' disabled':'')+'>«</button>';
+  pgHtml+='<button class="pg-btn" onclick="goAdPage('+(adPage-1)+')"'+(adPage===0?' disabled':'')+'>‹</button>';
+  for(var p=0;p<totalPages;p++){
+    pgHtml+='<button class="pg-btn'+(p===adPage?' active':'')+'" onclick="goAdPage('+p+')">'+(p+1)+'</button>';
+  }
+  pgHtml+='<button class="pg-btn" onclick="goAdPage('+(adPage+1)+')"'+(adPage>=totalPages-1?' disabled':'')+'>›</button>';
+  pgHtml+='<button class="pg-btn" onclick="goAdPage('+(totalPages-1)+')"'+(adPage>=totalPages-1?' disabled':'')+'>»</button>';
+  pgHtml+='<span class="pg-info">'+(start+1)+'–'+Math.min(end,ads.length)+' / '+ads.length+'개</span>';
+  document.getElementById('adPagination').innerHTML=pgHtml;
+}
+
+function goAdPage(p){adPage=p;renderCreativeTable();document.getElementById('creativeTable').scrollIntoView({behavior:'smooth'});}
+
+// 콘솔에서 checkMissingAds() 실행하면 By Creative에 누락된 소재 목록 출력
+window.checkMissingAds=function(){
+  const{from,to}=getDateRange();
+  const meta=RAW.meta.filter(r=>r.date>=from&&r.date<=to);
+  const ads=D().ads;
+  const adsKeys=new Set(ads.map(a=>a.ad_name+'|||'+a.person+'|||'+a.product));
+  const missing=[],seen=new Set();
+  meta.forEach(r=>{
+    const k=(r.ad_name||'null')+'|||'+r.person+'|||'+(r.product||'null');
+    if(!seen.has(k)&&!adsKeys.has(k)){seen.add(k);missing.push(r);}
+  });
+  if(!missing.length){console.log('[MISSING ADS] 없음 - 모든 소재 표시중');return[];}
+  console.log('[MISSING ADS] By Creative에 없는 소재 '+missing.length+'개:');
+  missing.forEach(r=>console.log('  ad_name:'+(r.ad_name||'❌null')+' | person:'+r.person+' | product:'+(r.product||'❌null')+' | raw:'+r.raw_name));
+  return missing;
+};
+
+loadData();
+</script>
+
+<!-- Image modal -->
+<div id="imgModal" onclick="this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;cursor:zoom-out;align-items:center;justify-content:center;">
+  <img id="imgModalImg" style="max-width:90vw;max-height:90vh;border-radius:10px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.5);">
+</div>
+<script>function openImg(u){
+  document.getElementById('imgModalImg').src=u.replace(/=s\d+$/,'=s0');
+  document.getElementById('imgModal').style.display='flex';
+}</script>
+</body>
+</html>
