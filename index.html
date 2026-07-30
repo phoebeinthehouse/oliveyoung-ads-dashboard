@@ -331,7 +331,13 @@ const META_URL=API_URL+'?sheet='+encodeURIComponent(META_SHEET);
 const ADS_LIST_SHEET='meta-ads-list-oy';
 const ADS_LIST_URL=API_URL+'?sheet='+encodeURIComponent(ADS_LIST_SHEET);
 let AD_IMAGES=[];
-function driveUrl(u){const m=u.match(/\/d\/([^/]+)/);return m?'https://lh3.googleusercontent.com/d/'+m[1]+'=s400':u;}
+function driveUrl(u){
+  const value=String(u||'').trim();
+  const pathId=value.match(/\/d\/([^/?]+)/);
+  const queryId=value.match(/[?&]id=([^&]+)/);
+  const id=pathId?pathId[1]:queryId?queryId[1]:null;
+  return id?'https://lh3.googleusercontent.com/d/'+id+'=s400':value;
+}
 function getAdImg(adName,product,person,from,to,media){
   if(!adName)return'';
   const lc=adName.toLowerCase();
@@ -340,13 +346,14 @@ function getAdImg(adName,product,person,from,to,media){
   // New products use their sheet code automatically; only grouped products
   // need an explicit alias list.
   const codes=product?(PC[product]||[product]):[];
+  const searchable=x=>String(x.s||x.n||'').toLowerCase();
   const mt=x=>{
-    const fn=x.n.toLowerCase(),tokens=fn.split('_');
-    if(person==='Partner')return tokens.includes(lc)||tokens.includes(lc+'-p')||(lc.includes('_')&&fn.includes(lc));
-    return lc.includes('_')?fn.includes(lc):tokens.includes(lc);
+    const fn=searchable(x),tokens=fn.split(/[_\s|]+/);
+    if(person==='Partner')return tokens.includes(lc)||tokens.includes(lc+'-p')||fn.includes(lc);
+    return tokens.includes(lc)||fn.includes(lc);
   };
-  const mp=x=>!personLc||x.n.toLowerCase().includes(personLc);
-  const mm=x=>!media||x.n.split('_').includes(media);
+  const mp=x=>!personLc||searchable(x).includes(personLc);
+  const mm=x=>!media||searchable(x).split(/[_\s|]+/).includes(media.toLowerCase());
   const inDateRange=x=>x.d&&from&&x.d>=from&&x.d<=to;
   const latest=(arr)=>arr.reduce((a,b)=>b.d>a.d?b:a);
   const best=(arr)=>{
@@ -354,7 +361,7 @@ function getAdImg(adName,product,person,from,to,media){
     return ranged.length?latest(ranged):arr[0];
   };
   if(codes.length){
-    const matches=AD_IMAGES.filter(x=>mt(x)&&codes.some(c=>x.n.split('_')[4]===c)&&mp(x)&&mm(x));
+    const matches=AD_IMAGES.filter(x=>mt(x)&&codes.some(c=>searchable(x).split(/[_\s|]+/).includes(c.toLowerCase()))&&mp(x)&&mm(x));
     if(matches.length){const e=best(matches);return driveUrl(e.u);}
   }
   const matches=AD_IMAGES.filter(x=>mt(x)&&mp(x)&&mm(x));
@@ -554,7 +561,10 @@ async function loadData(){
         const url=String(row[urlIdx]||'').trim();
         const name=String(row[nameIdx]||'').trim();
         if(!name||!isUrl(url))return null;
-        return{n:name,u:url,d:dateIdx>=0?parseDateStr(row[dateIdx]):null};
+        // Keep all text cells searchable. The sheet has evolved over time and
+        // creative/file names are not guaranteed to remain in one column.
+        const searchText=row.map(cell=>String(cell||'').trim()).filter(Boolean).join('|');
+        return{n:name,s:searchText,u:url,d:dateIdx>=0?parseDateStr(row[dateIdx]):null};
       }).filter(Boolean);
     }
 
