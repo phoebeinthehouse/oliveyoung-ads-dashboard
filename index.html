@@ -524,6 +524,7 @@ async function loadData(){
       if(!text)return[];
       const rows=JSON.parse(text);
       if(!Array.isArray(rows)||!rows.length)return[];
+      const IMAGE_URL_COLUMN=12; // Column M (zero-based index 12)
       const normalized=v=>String(v||'').trim().toLowerCase().replace(/[\s_-]/g,'');
       const isUrl=v=>/^https?:\/\//i.test(String(v||'').trim());
       let hIdx=rows.findIndex(row=>Array.isArray(row)&&row.some(cell=>{
@@ -534,7 +535,11 @@ async function loadData(){
       const headers=(rows[hIdx]||[]).map(normalized);
       const findCol=patterns=>headers.findIndex(h=>patterns.some(pattern=>h.includes(pattern)));
       let nameIdx=findCol(['파일명','filename','소재명','adname','name']);
-      let urlIdx=findCol(['썸네일url','thumbnailurl','imageurl','이미지url','url','링크']);
+      // `meta-ads-list-oy` stores the thumbnail image URL in column M.
+      // Only use header/URL discovery for older or incomplete sheet layouts.
+      let urlIdx=rows.slice(hIdx+1).some(row=>Array.isArray(row)&&isUrl(row[IMAGE_URL_COLUMN]))
+        ?IMAGE_URL_COLUMN
+        :findCol(['썸네일url','thumbnailurl','imageurl','이미지url','url','링크']);
       let dateIdx=findCol(['등록일','업로드일','날짜','일자','date']);
       const dataRows=rows.slice(hIdx+1);
       // Fall back to the first URL-shaped cell and the adjacent text columns if
