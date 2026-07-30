@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ulta Ads Dashboard</title>
+<title>Olive Young Ads Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{--lina:#378ADD;--phoebe:#D4537E;--sarah:#1D9E75;--iris:#9B59B6;--bg:#F7F6F2;--surface:#FFF;--surface2:#F1EFE8;--border:rgba(0,0,0,0.08);--text:#1a1a18;--muted:#888780;--radius:12px;--radius-sm:8px;}
@@ -130,7 +130,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surface2);}
 
 <nav class="nav">
   <div class="nav-inner">
-    <div class="nav-logo">Ulta Ads <span>Dashboard</span></div>
+    <div class="nav-logo">Olive Young Ads <span>Dashboard</span></div>
     <button class="nav-tab active" onclick="goPage('creator',this)">By Creator</button>
     <button class="nav-tab" onclick="goPage('product',this)">By Product</button>
     <button class="nav-tab" onclick="goPage('creative',this)">By Creative</button>
@@ -326,9 +326,18 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surface2);}
 
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbzAu2VrJkDePDDlMi4kvmOdnV08gQa_hWdE3A8bxrsa__-IqRHtOilSuRzPr8bt1rF5/exec';
-const META_URL=API_URL+'?sheet='+encodeURIComponent('meta-ulta');
+const META_SHEET='meta-oy';
+const META_URL=API_URL+'?sheet='+encodeURIComponent(META_SHEET);
+const ADS_LIST_SHEET='meta-ads-list-oy';
+const ADS_LIST_URL=API_URL+'?sheet='+encodeURIComponent(ADS_LIST_SHEET);
 let AD_IMAGES=[];
-function driveUrl(u){const m=u.match(/\/d\/([^/]+)/);return m?'https://lh3.googleusercontent.com/d/'+m[1]+'=s400':u;}
+function driveUrl(u){
+  const value=String(u||'').trim();
+  const pathId=value.match(/\/d\/([^/?]+)/);
+  const queryId=value.match(/[?&]id=([^&]+)/);
+  const id=pathId?pathId[1]:queryId?queryId[1]:null;
+  return id?'https://lh3.googleusercontent.com/d/'+id+'=s400':value;
+}
 function getAdImg(adName,product,person,from,to,media){
   if(!adName)return'';
   const lc=adName.toLowerCase();
@@ -337,13 +346,14 @@ function getAdImg(adName,product,person,from,to,media){
   // New products use their sheet code automatically; only grouped products
   // need an explicit alias list.
   const codes=product?(PC[product]||[product]):[];
+  const searchable=x=>String(x.s||x.n||'').toLowerCase();
   const mt=x=>{
-    const fn=x.n.toLowerCase(),tokens=fn.split('_');
-    if(person==='Partner')return tokens.includes(lc)||tokens.includes(lc+'-p')||(lc.includes('_')&&fn.includes(lc));
-    return lc.includes('_')?fn.includes(lc):tokens.includes(lc);
+    const fn=searchable(x),tokens=fn.split(/[_\s|]+/);
+    if(person==='Partner')return tokens.includes(lc)||tokens.includes(lc+'-p')||fn.includes(lc);
+    return tokens.includes(lc)||fn.includes(lc);
   };
-  const mp=x=>!personLc||x.n.toLowerCase().includes(personLc);
-  const mm=x=>!media||x.n.split('_').includes(media);
+  const mp=x=>!personLc||searchable(x).includes(personLc);
+  const mm=x=>!media||searchable(x).split(/[_\s|]+/).includes(media.toLowerCase());
   const inDateRange=x=>x.d&&from&&x.d>=from&&x.d<=to;
   const latest=(arr)=>arr.reduce((a,b)=>b.d>a.d?b:a);
   const best=(arr)=>{
@@ -351,7 +361,7 @@ function getAdImg(adName,product,person,from,to,media){
     return ranged.length?latest(ranged):arr[0];
   };
   if(codes.length){
-    const matches=AD_IMAGES.filter(x=>mt(x)&&codes.some(c=>x.n.split('_')[4]===c)&&mp(x)&&mm(x));
+    const matches=AD_IMAGES.filter(x=>mt(x)&&codes.some(c=>searchable(x).split(/[_\s|]+/).includes(c.toLowerCase()))&&mp(x)&&mm(x));
     if(matches.length){const e=best(matches);return driveUrl(e.u);}
   }
   const matches=AD_IMAGES.filter(x=>mt(x)&&mp(x)&&mm(x));
@@ -375,7 +385,9 @@ let RAW={meta:[],amz:[]};
 const CACHE_TTL=30*60*1000;
 function getCached(k){try{const i=localStorage.getItem(k);if(!i)return null;const{ts,d}=JSON.parse(i);if(Date.now()-ts>CACHE_TTL){localStorage.removeItem(k);return null;}return d;}catch(e){return null;}}
 function setCached(k,d){try{localStorage.setItem(k,JSON.stringify({ts:Date.now(),d}));}catch(e){}}
-function clearCache(){['meta_ulta_raw'].forEach(k=>localStorage.removeItem(k));}
+const META_CACHE_KEY='meta_oy_raw';
+const ADS_LIST_CACHE_KEY='meta_ads_list_oy_raw';
+function clearCache(){[META_CACHE_KEY,ADS_LIST_CACHE_KEY].forEach(k=>localStorage.removeItem(k));}
 let curPage='creator',cM='clicks',cPM='clicks';
 let dateMode='monthly',curMonth='2026-03',customFrom='',customTo='';
 let cFilters={person:'All',media:'All',product:'All'};
@@ -484,16 +496,22 @@ async function loadData(){
 
     const fetchOpts={redirect:'follow'};
 
-    let mt=getCached('meta_ulta_raw');
-    if(!mt){
-      const response=await fetch(META_URL,fetchOpts);
+    async function fetchSheet(url,cacheKey){
+      const cached=getCached(cacheKey);
+      if(cached)return cached;
+      const response=await fetch(url,fetchOpts);
       if(!response.ok)throw new Error('Google Sheets request failed ('+response.status+')');
-      mt=await response.text();
-      setCached('meta_ulta_raw',mt);
+      const text=await response.text();
+      setCached(cacheKey,text);
+      return text;
     }
 
-    // Build ad_name → image URL map
-    AD_IMAGES=[];
+    const mt=await fetchSheet(META_URL,META_CACHE_KEY);
+
+    // Thumbnail failures must not prevent the performance dashboard from loading.
+    let adsList='';
+    try{adsList=await fetchSheet(ADS_LIST_URL,ADS_LIST_CACHE_KEY);}
+    catch(e){console.warn('Thumbnail list load failed:',e);}
 
     function parseNum(v){return parseFloat(String(v||'0').replace(/,/g,'').replace(/-/g,'0'))||0;}
     function parseDateStr(raw){
@@ -509,6 +527,49 @@ async function loadData(){
       return m?m[1]:null;
     }
 
+    function parseAdsListRows(text){
+      if(!text)return[];
+      const rows=JSON.parse(text);
+      if(!Array.isArray(rows)||!rows.length)return[];
+      const IMAGE_URL_COLUMN=12; // Column M (zero-based index 12)
+      const normalized=v=>String(v||'').trim().toLowerCase().replace(/[\s_-]/g,'');
+      const isUrl=v=>/^https?:\/\//i.test(String(v||'').trim());
+      let hIdx=rows.findIndex(row=>Array.isArray(row)&&row.some(cell=>{
+        const key=normalized(cell);
+        return key.includes('파일명')||key.includes('filename')||key.includes('썸네일')||key==='url'||key.includes('링크');
+      }));
+      if(hIdx<0)hIdx=0;
+      const headers=(rows[hIdx]||[]).map(normalized);
+      const findCol=patterns=>headers.findIndex(h=>patterns.some(pattern=>h.includes(pattern)));
+      let nameIdx=findCol(['파일명','filename','소재명','adname','name']);
+      // `meta-ads-list-oy` stores the thumbnail image URL in column M.
+      // Only use header/URL discovery for older or incomplete sheet layouts.
+      let urlIdx=rows.slice(hIdx+1).some(row=>Array.isArray(row)&&isUrl(row[IMAGE_URL_COLUMN]))
+        ?IMAGE_URL_COLUMN
+        :findCol(['썸네일url','thumbnailurl','imageurl','이미지url','url','링크']);
+      let dateIdx=findCol(['등록일','업로드일','날짜','일자','date']);
+      const dataRows=rows.slice(hIdx+1);
+      // Fall back to the first URL-shaped cell and the adjacent text columns if
+      // the sheet has no recognizable English/Korean headers.
+      if(urlIdx<0){
+        const sample=dataRows.find(row=>Array.isArray(row)&&row.some(isUrl));
+        if(sample)urlIdx=sample.findIndex(isUrl);
+      }
+      if(nameIdx<0)nameIdx=urlIdx===0?1:0;
+      return dataRows.map(row=>{
+        if(!Array.isArray(row))return null;
+        const url=String(row[urlIdx]||'').trim();
+        const name=String(row[nameIdx]||'').trim();
+        if(!name||!isUrl(url))return null;
+        // Keep all text cells searchable. The sheet has evolved over time and
+        // creative/file names are not guaranteed to remain in one column.
+        const searchText=row.map(cell=>String(cell||'').trim()).filter(Boolean).join('|');
+        return{n:name,s:searchText,u:url,d:dateIdx>=0?parseDateStr(row[dateIdx]):null};
+      }).filter(Boolean);
+    }
+
+    AD_IMAGES=parseAdsListRows(adsList);
+
     function parseMetaRows(text){
       const rows=arrToObjs(text);
       const droppedNoPerson=[];
@@ -517,7 +578,7 @@ async function loadData(){
         const dateKey=keys.find(k=>k.includes('일자')||k.includes('날짜'))||keys[0];
         const nameKey=keys.find(k=>k.includes('소재명'))||keys[1]||'';
         const clickKey=keys.find(k=>k.includes('링크클릭'))||'';
-        // Cost Per ShopNowClick numerator: the meta-ulta `광고비` column.
+        // Cost Per ShopNowClick numerator: the meta-oy `광고비` column.
         const spendKey=keys.find(k=>k.includes('광고비'))||'';
         const impKey=keys.find(k=>k.includes('노출'))||'';
         const date=parseDateStr(r[dateKey]);
@@ -565,7 +626,7 @@ async function loadData(){
     }
 
     RAW.meta=parseMetaRows(mt);
-    // ShopNowClick is supplied by the same meta-ulta rows. It remains in the
+    // ShopNowClick is supplied by the same meta-oy rows. It remains in the
     // existing `purchases` field internally so the dashboard aggregation code
     // can consume the new conversion metric without duplicating every formula.
     RAW.amz=parseAmzRows(mt);
@@ -782,7 +843,7 @@ function updateMeta(){
   const lbl=getDateLabel(),noAmz=isNoAmz();
   ['creatorMeta','productMeta','creativeMeta','weeklyMeta','weeklyCreativeMeta'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el)el.textContent=lbl+' · meta-ulta';
+    if(el)el.textContent=lbl+' · '+META_SHEET;
   });
   document.getElementById('novNotice').style.display=noAmz?'block':'none';
 }
