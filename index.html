@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ulta Ads Dashboard</title>
+<title>Olive Young Ads Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{--lina:#378ADD;--phoebe:#D4537E;--sarah:#1D9E75;--iris:#9B59B6;--bg:#F7F6F2;--surface:#FFF;--surface2:#F1EFE8;--border:rgba(0,0,0,0.08);--text:#1a1a18;--muted:#888780;--radius:12px;--radius-sm:8px;}
@@ -130,7 +130,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surface2);}
 
 <nav class="nav">
   <div class="nav-inner">
-    <div class="nav-logo">Ulta Ads <span>Dashboard</span></div>
+    <div class="nav-logo">Olive Young Ads <span>Dashboard</span></div>
     <button class="nav-tab active" onclick="goPage('creator',this)">By Creator</button>
     <button class="nav-tab" onclick="goPage('product',this)">By Product</button>
     <button class="nav-tab" onclick="goPage('creative',this)">By Creative</button>
@@ -326,7 +326,8 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:var(--surface2);}
 
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbzAu2VrJkDePDDlMi4kvmOdnV08gQa_hWdE3A8bxrsa__-IqRHtOilSuRzPr8bt1rF5/exec';
-const META_URL=API_URL+'?sheet='+encodeURIComponent('meta-ulta');
+const META_SHEET='meta-oy';
+const META_URL=API_URL+'?sheet='+encodeURIComponent(META_SHEET);
 let AD_IMAGES=[];
 function driveUrl(u){const m=u.match(/\/d\/([^/]+)/);return m?'https://lh3.googleusercontent.com/d/'+m[1]+'=s400':u;}
 function getAdImg(adName,product,person,from,to,media){
@@ -375,7 +376,8 @@ let RAW={meta:[],amz:[]};
 const CACHE_TTL=30*60*1000;
 function getCached(k){try{const i=localStorage.getItem(k);if(!i)return null;const{ts,d}=JSON.parse(i);if(Date.now()-ts>CACHE_TTL){localStorage.removeItem(k);return null;}return d;}catch(e){return null;}}
 function setCached(k,d){try{localStorage.setItem(k,JSON.stringify({ts:Date.now(),d}));}catch(e){}}
-function clearCache(){['meta_ulta_raw'].forEach(k=>localStorage.removeItem(k));}
+const META_CACHE_KEY='meta_oy_raw';
+function clearCache(){localStorage.removeItem(META_CACHE_KEY);}
 let curPage='creator',cM='clicks',cPM='clicks';
 let dateMode='monthly',curMonth='2026-03',customFrom='',customTo='';
 let cFilters={person:'All',media:'All',product:'All'};
@@ -484,12 +486,12 @@ async function loadData(){
 
     const fetchOpts={redirect:'follow'};
 
-    let mt=getCached('meta_ulta_raw');
+    let mt=getCached(META_CACHE_KEY);
     if(!mt){
       const response=await fetch(META_URL,fetchOpts);
       if(!response.ok)throw new Error('Google Sheets request failed ('+response.status+')');
       mt=await response.text();
-      setCached('meta_ulta_raw',mt);
+      setCached(META_CACHE_KEY,mt);
     }
 
     // Build ad_name → image URL map
@@ -517,7 +519,7 @@ async function loadData(){
         const dateKey=keys.find(k=>k.includes('일자')||k.includes('날짜'))||keys[0];
         const nameKey=keys.find(k=>k.includes('소재명'))||keys[1]||'';
         const clickKey=keys.find(k=>k.includes('링크클릭'))||'';
-        // Cost Per ShopNowClick numerator: the meta-ulta `광고비` column.
+        // Cost Per ShopNowClick numerator: the meta-oy `광고비` column.
         const spendKey=keys.find(k=>k.includes('광고비'))||'';
         const impKey=keys.find(k=>k.includes('노출'))||'';
         const date=parseDateStr(r[dateKey]);
@@ -565,7 +567,7 @@ async function loadData(){
     }
 
     RAW.meta=parseMetaRows(mt);
-    // ShopNowClick is supplied by the same meta-ulta rows. It remains in the
+    // ShopNowClick is supplied by the same meta-oy rows. It remains in the
     // existing `purchases` field internally so the dashboard aggregation code
     // can consume the new conversion metric without duplicating every formula.
     RAW.amz=parseAmzRows(mt);
@@ -782,7 +784,7 @@ function updateMeta(){
   const lbl=getDateLabel(),noAmz=isNoAmz();
   ['creatorMeta','productMeta','creativeMeta','weeklyMeta','weeklyCreativeMeta'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el)el.textContent=lbl+' · meta-ulta';
+    if(el)el.textContent=lbl+' · '+META_SHEET;
   });
   document.getElementById('novNotice').style.display=noAmz?'block':'none';
 }
